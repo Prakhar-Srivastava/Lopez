@@ -60,12 +60,11 @@ class Model:
         if not self.__generator__:
             dropout = 0.2
             depth = 4 * 128
-            dim = 50
             self.__generator__ = Sequential()
-            self.__generator__.add(Dense(250*200*depth, input_dim=100))
+            self.__generator__.add(Dense(62*50*depth, input_dim=100))
             self.__generator__.add(BatchNormalization(momentum=0.9))
             self.__generator__.add(Activation('relu'))
-            self.__generator__.add(Reshape((250, 200, depth)))
+            self.__generator__.add(Reshape((62, 50, depth)))
             self.__generator__.add(Dropout(dropout))
 
             self.__generator__.add(UpSampling2D())
@@ -117,7 +116,7 @@ def save(path, model):
     dump(model, path)
 
 
-def load(path=None, img_rows=250, img_cols=200):
+def load(path=None, img_rows=248, img_cols=200):
     if not path:
         return Model(img_rows, img_cols)
     print('Loading model from %s...'%path)
@@ -125,18 +124,18 @@ def load(path=None, img_rows=250, img_cols=200):
 
 
 def train(X, y, trainSteps=10000, batchSize=10):
-    X_train = X.values.reshape((-1, 250, 200))
-    y_train = y.values.reshape((-1, 250, 200))
+    X_train = X.values.reshape((-1, 250, 200))[:, :248,:]
+    y_train = y.values.reshape((-1, 250, 200))[:,:248, :]
     model = load()
     am = model.adversarialModel()
     dm = model.discriminatorModel()
     gen = model.generator()
-    for i in range(2):
-        images_train = X_train[np.random.randint(0, X_train.shape[0], size=batchSize), :, :]
+    for i in range(trainSteps):
+        images_train = X_train[np.random.randint(0, X_train.shape[0], size=batchSize), :, :].reshape((batchSize, 248, 200, -1))
         print('shape of images_train', images_train.shape)
         noise = np.random.uniform(-1.0, 1.0, size=[batchSize, 100])
         print('shape of noise', noise.shape)
-        images_fake = gen.predict(noise)
+        images_fake = gen.predict(noise)# .reshape((batchSize, 248, 200))
         print('shape of images_fake', images_fake.shape)
         x = np.concatenate((images_train, images_fake))
         y = np.ones([2*batchSize, 1])
@@ -154,3 +153,11 @@ def train(X, y, trainSteps=10000, batchSize=10):
 
 def test(dataset):
     print('Testing dataset')
+
+
+# 1.6e6/4875
+'''
+62.5 * 50 * 128 * 4 = 1.6e6 = 62 * 50 * 4 * 128 + .5 * 50 * 4 * 128
+==> 62.5 * 50 * 128 * 4 = 1.6e6 = 62 * 50 * 4 * 129.0322580645
+62 * 50 * 4 * 129.03225806451611609950000000000004999...
+'''

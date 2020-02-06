@@ -26,8 +26,8 @@ def prepareTrain(dir):
         X = np.vstack((X, sketch.flatten()))
         img = rgb2gray(plt.imread(imgPath(path))).astype('int')
         y = np.vstack((y, img.flatten()))
-    pd.DataFrame(X).astype('int').to_csv('./X.csv', header=None, index=None)
-    pd.DataFrame(y).astype('int').to_csv('./y.csv', header=None, index=None)
+    pd.DataFrame(X).astype('int').to_csv('X.csv', header=None, index=None)
+    pd.DataFrame(y).astype('int').to_csv('y.csv', header=None, index=None)
 
 def ppSketch(sketch):
     print('ppSketch')
