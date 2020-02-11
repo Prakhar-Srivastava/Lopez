@@ -123,26 +123,30 @@ def load(path=None, img_rows=248, img_cols=200):
     return jLoad(path)
 
 
-def train(X, y, trainSteps=10000, batchSize=10):
-    X_train = X.values.reshape((-1, 250, 200))[:, :248,:]
-    y_train = y.values.reshape((-1, 250, 200))[:,:248, :]
+def train(X, _y, trainSteps=10000, batchSize=10):
+    X_train = X.values.reshape((-1, 250, 200))[:, :248, :]
+    y_train = _y.values.reshape((-1, 250, 200))[:, :248, :]
     model = load()
     am = model.adversarialModel()
     dm = model.discriminatorModel()
     gen = model.generator()
     for i in range(trainSteps):
-        images_train = X_train[np.random.randint(0, X_train.shape[0], size=batchSize), :, :].reshape((batchSize, 248, 200, -1))
+        images_train = X_train[np.random.randint(0, X_train.shape[0],\
+            size=batchSize), :, :].reshape((batchSize, 248, 200, -1))
         print('shape of images_train', images_train.shape)
         noise = np.random.uniform(-1.0, 1.0, size=[batchSize, 100])
         print('shape of noise', noise.shape)
         images_fake = gen.predict(noise)# .reshape((batchSize, 248, 200))
         print('shape of images_fake', images_fake.shape)
         x = np.concatenate((images_train, images_fake))
+        print('images_train & images_fake concatenated')
         y = np.ones([2*batchSize, 1])
         y[batchSize:, :] = 0
+        print('y is', y)
+        print('Training on y')
         d_loss = dm.train_on_batch(x, y)
 
-        y = np.ones([batch_size, 1])
+        y = np.ones([batchSize, 1])
         noise = np.random.uniform(-1.0, 1.0, size=[batchSize, 100])
         a_loss = am.train_on_batch(noise, y)
         log_mesg = "%d: [D loss: %f, acc: %f]" % (i, d_loss[0], d_loss[1])
