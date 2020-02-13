@@ -157,7 +157,7 @@ def train(X, _y, trainSteps=1000, batchSize=2):
 
     for i in range(trainSteps):
         step(i)
-    dump('Lopez.model', model)
+    dump(model, 'Lopez.model')
 
 
 
