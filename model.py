@@ -1,12 +1,12 @@
-import pandas as pd
+# import pandas as pd
 import numpy as np
-from joblib import load as jLoad, dump
-from matplotlib import pyplot as plt
+from joblib import load as jLoad, dump# , Parallel, delayed
+# from matplotlib import pyplot as plt
 from keras.models import Sequential
 from keras.layers import Dense, Activation, Flatten, Reshape, Conv2D,\
                 Conv2DTranspose, UpSampling2D, LeakyReLU, Dropout,\
                 BatchNormalization, SeparableConv2D
-from keras.optimizers import Adam, RMSprop
+from keras.optimizers import RMSprop# , Adam
 
 class Model:
     def __init__(self, img_rows, img_cols, channel=1, discriminator=None,\
@@ -24,7 +24,7 @@ class Model:
     def discriminator(self):
         if not self.__discriminator__:
             dropout = 0.2
-            convOut = 128
+            convOut = 32
             input_shape = (self.img_rows, self.img_cols, self.channel)
             self.__discriminator__ = Sequential()
             self.__discriminator__.add(Conv2D(convOut, 5, strides=(1, 1),\
@@ -59,7 +59,7 @@ class Model:
     def generator(self):
         if not self.__generator__:
             dropout = 0.2
-            depth = 4 * 128
+            depth = 4 * 32
             self.__generator__ = Sequential()
             self.__generator__.add(Dense(62*50*depth, input_dim=100))
             self.__generator__.add(BatchNormalization(momentum=0.9))
@@ -123,14 +123,16 @@ def load(path=None, img_rows=248, img_cols=200):
     return jLoad(path)
 
 
-def train(X, _y, trainSteps=10000, batchSize=10):
+def train(X, _y, trainSteps=1000, batchSize=2):
     X_train = X.values.reshape((-1, 250, 200))[:, :248, :]
-    y_train = _y.values.reshape((-1, 250, 200))[:, :248, :]
+    # y_train = _y.values.reshape((-1, 250, 200))[:, :248, :]
     model = load()
     am = model.adversarialModel()
     dm = model.discriminatorModel()
     gen = model.generator()
-    for i in range(trainSteps):
+
+
+    def step(iteration):
         images_train = X_train[np.random.randint(0, X_train.shape[0],\
             size=batchSize), :, :].reshape((batchSize, 248, 200, -1))
         print('shape of images_train', images_train.shape)
@@ -145,13 +147,17 @@ def train(X, _y, trainSteps=10000, batchSize=10):
         print('y is', y)
         print('Training on y')
         d_loss = dm.train_on_batch(x, y)
-
         y = np.ones([batchSize, 1])
         noise = np.random.uniform(-1.0, 1.0, size=[batchSize, 100])
         a_loss = am.train_on_batch(noise, y)
-        log_mesg = "%d: [D loss: %f, acc: %f]" % (i, d_loss[0], d_loss[1])
+        log_mesg = "%d: [D loss: %f, acc: %f]" % (iteration, d_loss[0], d_loss[1])
         log_mesg = "%s  [A loss: %f, acc: %f]" % (log_mesg, a_loss[0], a_loss[1])
         print(log_mesg)
+
+
+    for i in range(trainSteps):
+        step(i)
+    dump('Lopez.model', model)
 
 
 
